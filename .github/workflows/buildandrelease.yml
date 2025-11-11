@@ -1,0 +1,47 @@
+name: Unity Windows Build & Pre-Release
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build_and_release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Unity
+      uses: game-ci/unity-actions/setup@v2
+      with:
+        unityVersion: 6000.2.10f1
+        activateLicense: true
+
+    - name: Build Windows Player
+      run: |
+        Unity -quit -batchmode -projectPath . -executeMethod BuildScript.PerformBuild -buildWindows64Player build/Test3D1.exe
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: WindowsBuild
+        path: build/
+
+    - name: Create Pre-Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: prerelease-$(date +'%Y%m%d-%H%M%S')
+        name: PreRelease-$(date +'%Y%m%d-%H%M%S')
+        body: "Automatic pre-release build from GitHub Actions"
+        draft: false
+        prerelease: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload to Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: build/Test3D1.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
